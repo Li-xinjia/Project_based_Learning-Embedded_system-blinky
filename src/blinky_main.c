@@ -95,7 +95,7 @@ int main(void) {
 
   // Initialize console
   initConsole();
-//  UARTprintf("Hello, world!\n");
+  UARTprintf("Hello, world!\n");
   
   led_color = LED_ALL;
   base_led_color = LED_BLUE;
