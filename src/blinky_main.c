@@ -66,10 +66,10 @@ void initInterruptPins(void) {
                      GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     GPIOIntClear(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
 
-    GPIOIntRegister(GPIO_PORTF_BASE, SW1PinIntHandler);
-    GPIOIntTypeSet(GPIO_PORTF_BASE, INT_LEFT_BUTTON,
+    GPIOIntRegister(GPIO_PORTF_BASE,SW1PinIntHandler);
+    GPIOIntTypeSet(GPIO_PORTF_BASE,INT_LEFT_BUTTON,
                    GPIO_FALLING_EDGE);
-    GPIOIntEnable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
+    GPIOIntEnable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
 
     UARTprintf("Interrupt pins initiate over\n");
 }
@@ -87,48 +87,39 @@ void SysTickIntHandler(void) {
          * The 3rd param of denotes values to be written in bit pattern.
          * What really written to GPIO pins is a logical AND of 2nd and 3rd params.
          */
-//        if (led_on) {
-//            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, led_color);
-//        } else {
-//            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, 0); // turn off all LEDs
-//        }
-//        led_on = !led_on;
+        if (led_on) {
+            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, led_color);
+        } else {
+            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, 0); // turn off all LEDs
+        }
+        led_on = !led_on;
     }
     tick_count++;
 }
 
 void SW1PinIntHandler(void) {
-    GPIOIntDisable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
-    GPIOIntClear(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
+    GPIOIntDisable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
+    GPIOIntClear(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
 
-    if (led_on) {
-
-        switch (led_color) {
-            case LED_BLUE:
-                led_color = LED_RED;
-                break;
-            case LED_RED:
-                led_color = LED_GREEN;
-                break;
-            case LED_GREEN:
-                led_color = LED_WHITE;
-                break;
-            case LED_WHITE:
-                led_color = LED_BLUE;
-                break;
-            default:
-                break;
-        }
-
-
-        GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, led_color);
-    } else {
-        GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, 0); // turn off all LEDs
+    switch(led_color){
+        case LED_BLUE:
+            led_color = LED_RED;
+            break;
+        case LED_RED:
+            led_color = LED_GREEN;
+            break;
+        case LED_GREEN:
+            led_color = LED_WHITE;
+            break;
+        case LED_WHITE:
+            led_color = LED_BLUE;
+            break;
+        default:
+            break;
     }
-    led_on = !led_on;
 
     UARTprintf("SW1 pushed\n");
-    GPIOIntEnable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
+    GPIOIntEnable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
 }
 
 int main(void) {
