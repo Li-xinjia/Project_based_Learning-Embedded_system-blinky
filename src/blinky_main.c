@@ -32,6 +32,7 @@
 
 uint32_t base_led_color;
 uint32_t led_color = LED_ALL;
+uint32_t now_brightness = 0;
 
 bool led_on = false;
 
@@ -66,12 +67,47 @@ void initInterruptPins(void) {
                      GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     GPIOIntClear(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
 
-    GPIOIntRegister(GPIO_PORTF_BASE,SW1PinIntHandler);
-    GPIOIntTypeSet(GPIO_PORTF_BASE,INT_LEFT_BUTTON,
+    GPIOIntRegister(GPIO_PORTF_BASE, SW1PinIntHandler);
+    GPIOIntTypeSet(GPIO_PORTF_BASE, INT_LEFT_BUTTON,
                    GPIO_FALLING_EDGE);
-    GPIOIntEnable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
+    GPIOIntEnable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
 
     UARTprintf("Interrupt pins initiate over\n");
+}
+
+void initLEDPWM() {
+    // For LED
+    // Configure the PWM1 to count up/down without synchronization.
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_2, PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_3, PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
+
+    // Set PWM period (10ms * PWMClock=10000)
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, 1600);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, 1600);
+
+    // Set the PWM pulse width.
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5, 0); // R
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, 0); // B
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7, 0); // G
+
+    // Permit to output PWM to pins.
+    PWMOutputState(PWM1_BASE, PWM_OUT_5_BIT, true);
+    PWMOutputState(PWM1_BASE, PWM_OUT_6_BIT, true);
+    PWMOutputState(PWM1_BASE, PWM_OUT_7_BIT, true);
+
+    // Enable the PWM generator block.
+    PWMGenEnable(PWM1_BASE, PWM_GEN_2);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_3);
+}
+
+void setRPG(uint32_t R, uint32_t B, uint32_t G) {
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5, R); // R
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, B); // B
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_7, G); // G
+
+    PWMOutputState(PWM1_BASE, PWM_OUT_5_BIT, true);
+    PWMOutputState(PWM1_BASE, PWM_OUT_6_BIT, true);
+    PWMOutputState(PWM1_BASE, PWM_OUT_7_BIT, true);
 }
 
 //*****************************************************************************
@@ -80,46 +116,71 @@ void initInterruptPins(void) {
 
 void SysTickIntHandler(void) {
     static uint32_t tick_count = 0;
-    if (tick_count % 16 == 0) {
+    if (tick_count % 32 == 0) {
         tick_count = 0;
+
+        switch (led_color) {
+            case LED_BLUE:
+                led_color = LED_RED;
+                break;
+            case LED_RED:
+                led_color = LED_GREEN;
+                break;
+            case LED_GREEN:
+                led_color = LED_WHITE;
+                break;
+            case LED_WHITE:
+                led_color = LED_BLUE;
+                break;
+            default:
+                break;
+        }
+
         /*
          * Note that the 2nd param of GPIOPinWrite denotes pins to be written in bit pattern.
          * The 3rd param of denotes values to be written in bit pattern.
          * What really written to GPIO pins is a logical AND of 2nd and 3rd params.
          */
-        if (led_on) {
-            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, led_color);
+    }
+    if (led_on) {
+        if (now_brightness >= 1500) {
+            led_on = !led_on;
         } else {
-            GPIOPinWrite(GPIO_PORTF_BASE, base_led_color, 0); // turn off all LEDs
+            now_brightness += 100;
         }
-        led_on = !led_on;
+    } else {
+        if (now_brightness == 0) {
+            led_on = !led_on;
+        } else {
+            now_brightness -= 100;
+        }
+    }
+
+    switch (led_color) {
+        case LED_BLUE:
+            setRPG(0, now_brightness, 0);
+            break;
+        case LED_RED:
+            setRPG(now_brightness, 0, 0);
+            break;
+        case LED_GREEN:
+            setRPG(0, 0, now_brightness);
+            break;
+        case LED_WHITE:
+            setRPG(now_brightness, now_brightness, now_brightness);
+            break;
+        default:
+            break;
     }
     tick_count++;
 }
 
 void SW1PinIntHandler(void) {
-    GPIOIntDisable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
-    GPIOIntClear(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
-
-    switch(led_color){
-        case LED_BLUE:
-            led_color = LED_RED;
-            break;
-        case LED_RED:
-            led_color = LED_GREEN;
-            break;
-        case LED_GREEN:
-            led_color = LED_WHITE;
-            break;
-        case LED_WHITE:
-            led_color = LED_BLUE;
-            break;
-        default:
-            break;
-    }
+    GPIOIntDisable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
+    GPIOIntClear(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
 
     UARTprintf("SW1 pushed\n");
-    GPIOIntEnable(GPIO_PORTF_BASE,INT_LEFT_BUTTON);
+    GPIOIntEnable(GPIO_PORTF_BASE, INT_LEFT_BUTTON);
 }
 
 int main(void) {
@@ -134,6 +195,9 @@ int main(void) {
 
     // Set up interrupts (you can specify GPIO interrupt initialization here)
     initInterruptPins();
+
+    // Initialize LED's PWM
+    initLEDPWM();
 
 //  UARTprintf("Hello, world!\n");
 
