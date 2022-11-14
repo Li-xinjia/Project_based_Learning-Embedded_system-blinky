@@ -137,18 +137,18 @@ PortFunctionInit(void)
     //
     // Enable port PF2 for PWM1 M1PWM6
     //
-    //MAP_GPIOPinConfigure(GPIO_PF2_M1PWM6);
-    //MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
+    MAP_GPIOPinConfigure(GPIO_PF2_M1PWM6);
+    MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_2);
     //
     // Enable port PF3 for PWM1 M1PWM7
     //
-    //MAP_GPIOPinConfigure(GPIO_PF3_M1PWM7);
-    //MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_3);
+    MAP_GPIOPinConfigure(GPIO_PF3_M1PWM7);
+    MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_3);
     //
     // Enable port PF1 for PWM1 M1PWM5
     //
-    //MAP_GPIOPinConfigure(GPIO_PF1_M1PWM5);
-    //MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1);
+    MAP_GPIOPinConfigure(GPIO_PF1_M1PWM5);
+    MAP_GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1);
 
 
     MAP_GPIODirModeSet(GPIO_PORTF_BASE, GPIO_PIN_4, GPIO_DIR_MODE_IN);
